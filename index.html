@@ -111,8 +111,50 @@
       height: 560px;
       border-radius: 16px;
       display: block;
-      background: linear-gradient(180deg, #0a1425 0%, #0f1d38 42%, #0b1323 100%);
+      background: radial-gradient(circle at center, rgba(12, 16, 28, 0.96) 0%, rgba(12, 18, 32, 0.94) 52%, rgba(12, 18, 32, 0.9));
       border: 1px solid var(--border);
+    }
+
+    .kaaba {
+      position: absolute;
+      inset: 50%;
+      width: 118px;
+      height: 128px;
+      transform: translate(-50%, -50%) scale(1) perspective(600px) rotateX(6deg);
+      background: linear-gradient(135deg, #0b0b0b 0%, #161616 50%, #050505 100%);
+      border-radius: 10px;
+      box-shadow: 0 20px 48px rgba(0,0,0,0.55), inset 0 0 0 4px #000, inset 0 0 0 9px rgba(245, 196, 0, 0.05);
+      pointer-events: none;
+    }
+
+    .kaaba::before {
+      content: "";
+      position: absolute;
+      top: 25%; left: -14%;
+      width: 140%; height: 18px;
+      background: linear-gradient(90deg, #f5c400, #f8d64e);
+      box-shadow: 0 0 16px rgba(245, 196, 0, 0.35);
+    }
+
+    .kaaba::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+    }
+
+    .kaaba .door {
+      position: absolute;
+      display: block;
+      right: 12px;
+      bottom: 18px;
+      width: 32px;
+      height: 50px;
+      background: linear-gradient(180deg, #f7d260, #e7b700);
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(245, 196, 0, 0.35);
     }
 
     .controls {
@@ -231,6 +273,7 @@
 
   <main>
     <section class="card canvas-wrap">
+      <div class="kaaba" aria-hidden="true"><span class="door"></span></div>
       <canvas id="tawafCanvas" aria-label="محاكاة الطواف حول الكعبة"></canvas>
     </section>
 
@@ -289,8 +332,7 @@
       people: []
     };
 
-    const radiusRange = [130, 210];
-    const scene = { fov: 520, groundLean: 0.42, baseZ: 260 };
+    const radiusRange = [140, 220];
 
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
@@ -300,175 +342,64 @@
       ctx.scale(devicePixelRatio, devicePixelRatio);
     }
 
-    function projectPoint(x, z, height, dims) {
-      const scale = scene.fov / (scene.fov + z);
-      return {
-        x: dims.centerX + x * scale,
-        y: dims.groundY - z * scene.groundLean * scale - height
-      };
-    }
+    function drawBaseScene(width, height, centerX, centerY) {
+      ctx.save();
+      ctx.translate(centerX, centerY + 6);
+      ctx.scale(1, 0.7);
 
-    function drawGround(dims) {
-      const { width, height, centerX, horizon, groundY } = dims;
+      const outerRadius = radiusRange[1] + 120;
+      const innerRadius = radiusRange[0] - 40;
+      const floor = ctx.createRadialGradient(0, 0, 60, 0, 0, outerRadius);
+      floor.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+      floor.addColorStop(0.6, 'rgba(255, 255, 255, 0.06)');
+      floor.addColorStop(1, 'rgba(90, 125, 160, 0.18)');
 
-      const sky = ctx.createLinearGradient(0, 0, 0, horizon + 40);
-      sky.addColorStop(0, 'rgba(17, 42, 92, 0.7)');
-      sky.addColorStop(1, 'rgba(14, 28, 46, 0.4)');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, width, horizon + 60);
+      ctx.fillStyle = floor;
+      ctx.beginPath();
+      ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+      ctx.fill();
 
-      const ground = ctx.createLinearGradient(0, horizon, 0, height);
-      ground.addColorStop(0, 'rgba(26, 38, 58, 0.9)');
-      ground.addColorStop(0.55, 'rgba(18, 26, 44, 0.92)');
-      ground.addColorStop(1, 'rgba(10, 16, 28, 0.95)');
-      ctx.fillStyle = ground;
-      ctx.fillRect(0, horizon, width, height - horizon);
+      const matafRadius = (radiusRange[0] + radiusRange[1]) / 2 + 20;
+      const band = ctx.createLinearGradient(-outerRadius, 0, outerRadius, 0);
+      band.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+      band.addColorStop(0.5, 'rgba(245, 196, 0, 0.45)');
+      band.addColorStop(1, 'rgba(255, 255, 255, 0.35)');
+      ctx.strokeStyle = band;
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.arc(0, 0, matafRadius, 0, Math.PI * 2);
+      ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 1.3;
-      for (let i = -1; i <= 2; i++) {
+      const rings = [innerRadius, (innerRadius + radiusRange[0]) / 2, radiusRange[0], (radiusRange[0] + radiusRange[1]) / 2, radiusRange[1] + 12];
+      rings.forEach((r, i) => {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - i * 0.03})`;
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([10, 8]);
         ctx.beginPath();
-        ctx.moveTo(0, groundY + i * 10);
-        ctx.lineTo(width, groundY - i * 10);
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      ctx.lineWidth = 1.2;
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 14) {
+        const r1 = innerRadius + 10;
+        const r2 = outerRadius;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * r1, Math.sin(angle) * r1);
+        ctx.lineTo(Math.cos(angle) * r2, Math.sin(angle) * r2);
         ctx.stroke();
       }
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 2;
+      ctx.restore();
+
+      const shadow = ctx.createRadialGradient(centerX, centerY + 12, 12, centerX, centerY + 12, 130);
+      shadow.addColorStop(0, 'rgba(0,0,0,0.4)');
+      shadow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shadow;
       ctx.beginPath();
-      ctx.moveTo(0, height);
-      ctx.lineTo(centerX, horizon);
-      ctx.lineTo(width, height);
-      ctx.stroke();
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-      ctx.setLineDash([16, 12]);
-      ctx.beginPath();
-      ctx.moveTo(centerX - 120, height);
-      ctx.lineTo(centerX + 90, horizon + 10);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(centerX + 140, height);
-      ctx.lineTo(centerX - 80, horizon + 10);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.beginPath();
-      ctx.moveTo(centerX - 260, groundY + 12);
-      ctx.lineTo(centerX + 260, groundY - 18);
-      ctx.lineTo(centerX + 280, height);
-      ctx.lineTo(centerX - 300, height);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawRing(dims) {
-      const { centerX } = dims;
-      const ringOuter = 240;
-      const ringInner = 120;
-      const zOffset = scene.baseZ;
-
-      const pointsOuter = [];
-      const pointsInner = [];
-      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 60) {
-        const x = Math.cos(angle) * ringOuter;
-        const z = zOffset + Math.sin(angle) * ringOuter * 0.55;
-        pointsOuter.push(projectPoint(x, z, 0, dims));
-
-        const xi = Math.cos(angle) * ringInner;
-        const zi = zOffset + Math.sin(angle) * ringInner * 0.55;
-        pointsInner.push(projectPoint(xi, zi, 0, dims));
-      }
-
-      const radial = ctx.createRadialGradient(centerX, dims.horizon + 120, 60, centerX, dims.groundY, 420);
-      radial.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
-      radial.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
-      ctx.fillStyle = radial;
-
-      ctx.beginPath();
-      pointsOuter.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      for (let i = pointsInner.length - 1; i >= 0; i--) {
-        const p = pointsInner[i];
-        ctx.lineTo(p.x, p.y);
-      }
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.strokeStyle = 'rgba(245, 196, 0, 0.4)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      pointsOuter.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
-    }
-
-    function drawKaaba(dims) {
-      const w = 120;
-      const d = 120;
-      const h = 110;
-      const cx = 0;
-      const cz = scene.baseZ;
-
-      const corners = {
-        frontLeft: projectPoint(cx - w / 2, cz - d / 2, 0, dims),
-        frontRight: projectPoint(cx + w / 2, cz - d / 2, 0, dims),
-        backLeft: projectPoint(cx - w / 2, cz + d / 2, 0, dims),
-        backRight: projectPoint(cx + w / 2, cz + d / 2, 0, dims),
-        frontLeftTop: projectPoint(cx - w / 2, cz - d / 2, h, dims),
-        frontRightTop: projectPoint(cx + w / 2, cz - d / 2, h, dims),
-        backLeftTop: projectPoint(cx - w / 2, cz + d / 2, h, dims),
-        backRightTop: projectPoint(cx + w / 2, cz + d / 2, h, dims),
-      };
-
-      ctx.fillStyle = '#0a0a0f';
-      ctx.beginPath();
-      ctx.moveTo(corners.backLeft.x, corners.backLeft.y);
-      ctx.lineTo(corners.backRight.x, corners.backRight.y);
-      ctx.lineTo(corners.backRightTop.x, corners.backRightTop.y);
-      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = '#0b0b12';
-      ctx.beginPath();
-      ctx.moveTo(corners.backLeft.x, corners.backLeft.y);
-      ctx.lineTo(corners.frontLeft.x, corners.frontLeft.y);
-      ctx.lineTo(corners.frontLeftTop.x, corners.frontLeftTop.y);
-      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
-      ctx.closePath();
-      ctx.fill();
-
-      const gold = ctx.createLinearGradient(corners.frontLeft.x, corners.frontLeft.y, corners.frontRight.x, corners.frontRight.y);
-      gold.addColorStop(0, '#f5c400');
-      gold.addColorStop(1, '#f7dd73');
-      ctx.fillStyle = gold;
-      ctx.beginPath();
-      ctx.moveTo(corners.frontLeft.y > corners.backLeft.y ? corners.frontLeft.x : corners.backLeft.x, Math.min(corners.frontLeft.y, corners.backLeft.y));
-      ctx.fillRect(Math.min(corners.frontLeft.x, corners.backLeft.x), (corners.frontLeft.y + corners.backLeft.y) / 2 - 6, Math.abs(corners.frontLeft.x - corners.backLeft.x), 12);
-
-      ctx.fillStyle = gold;
-      const doorWidth = 24;
-      const doorHeight = 38;
-      const doorBase = projectPoint(cx + w / 4, cz - d / 2, 0, dims);
-      const doorTop = projectPoint(cx + w / 4, cz - d / 2, doorHeight, dims);
-      ctx.beginPath();
-      ctx.moveTo(doorBase.x - doorWidth / 2, doorBase.y);
-      ctx.lineTo(doorBase.x + doorWidth / 2, doorBase.y);
-      ctx.lineTo(doorTop.x + doorWidth / 2, doorTop.y);
-      ctx.lineTo(doorTop.x - doorWidth / 2, doorTop.y);
-      ctx.closePath();
-      ctx.fill();
-
-      const roofGradient = ctx.createLinearGradient(corners.backLeftTop.x, corners.backLeftTop.y, corners.backRightTop.x, corners.backRightTop.y);
-      roofGradient.addColorStop(0, 'rgba(255,255,255,0.12)');
-      roofGradient.addColorStop(1, 'rgba(255,255,255,0.02)');
-      ctx.fillStyle = roofGradient;
-      ctx.beginPath();
-      ctx.moveTo(corners.frontLeftTop.x, corners.frontLeftTop.y);
-      ctx.lineTo(corners.frontRightTop.x, corners.frontRightTop.y);
-      ctx.lineTo(corners.backRightTop.x, corners.backRightTop.y);
-      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
-      ctx.closePath();
+      ctx.ellipse(centerX, centerY + 10, 90, 56, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -495,47 +426,32 @@
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const dims = {
-        width,
-        height,
-        centerX: width / 2,
-        horizon: height * 0.32,
-        groundY: height * 0.88,
-      };
+      const centerX = width / 2;
+      const centerY = height / 2;
 
-      drawGround(dims);
-      drawRing(dims);
-      drawKaaba(dims);
+      drawBaseScene(width, height, centerX, centerY);
 
       state.people.forEach(person => {
         const nat = state.nationalities.find(n => n.id === person.nationalityId);
         if (!nat) return;
         person.angle += nat.speed * 0.01;
+        const x = centerX + Math.cos(person.angle) * person.radius;
+        const y = centerY + Math.sin(person.angle) * person.radius * 0.65;
+        const depthScale = 0.65 + 0.35 * (person.radius / radiusRange[1]);
+        const size = nat.size * depthScale;
 
-        const x3d = Math.cos(person.angle) * person.radius;
-        const z3d = scene.baseZ + Math.sin(person.angle) * person.radius * 0.55;
-        const scale = scene.fov / (scene.fov + z3d);
-        const size = nat.size * (0.8 + scale * 1.6);
-        const pos = projectPoint(x3d, z3d, size * 1.5, dims);
-
-        const shadow = projectPoint(x3d, z3d, size * 0.2, dims);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.beginPath();
-        ctx.ellipse(shadow.x, shadow.y + size * 0.4, size * 0.9, size * 0.4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
-        gradient.addColorStop(0, nat.color + 'cc');
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, nat.color + 'bb');
         gradient.addColorStop(1, nat.color + '00');
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
+        ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#0b1320';
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y - size * 0.35, size * 0.5, 0, Math.PI * 2);
+        ctx.arc(x, y - size * 0.3, size * 0.55, 0, Math.PI * 2);
         ctx.fill();
       });
 
