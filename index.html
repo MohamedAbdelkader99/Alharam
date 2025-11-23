@@ -1,1 +1,783 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الحرم المكي - محاكاة الطواف</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #0f172a;
+      --card: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.14);
+      --accent: #f5c400;
+      --text: #e2e8f0;
+    }
 
+    * {
+      box-sizing: border-box;
+      font-family: 'Noto Sans Arabic', 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 20%, rgba(245, 196, 0, 0.12), transparent 25%),
+                  radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.12), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    header {
+      position: relative;
+      overflow: hidden;
+      min-height: 360px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      isolation: isolate;
+      color: #0b1320;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.9)),
+                  url('https://images.unsplash.com/photo-1541945593100-4e3123d5e25f?auto=format&fit=crop&w=1600&q=90') center/cover;
+      transform: scale(1.05);
+      z-index: -2;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 40%, rgba(15, 23, 42, 0.8));
+      z-index: -1;
+    }
+
+    .hero-content {
+      max-width: 780px;
+      padding: 48px 20px 64px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 48px);
+      letter-spacing: 0.4px;
+    }
+
+    p.lead {
+      margin: 0;
+      font-size: clamp(17px, 2vw, 20px);
+      opacity: 0.9;
+    }
+
+    main {
+      padding: 36px 18px 56px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+      grid-template-columns: 1fr 360px;
+    }
+
+    @media (max-width: 1024px) {
+      main { grid-template-columns: 1fr; }
+      .side-panel { order: -1; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      backdrop-filter: blur(12px);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+      border-radius: 20px;
+      background: radial-gradient(circle at 35% 15%, rgba(255, 214, 120, 0.1), transparent 35%),
+                  radial-gradient(circle at 70% 85%, rgba(80, 200, 255, 0.08), transparent 28%);
+    }
+
+    canvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 16px;
+      display: block;
+      background: linear-gradient(180deg, #0f1d2c 0%, #12203c 55%, #0b1323 100%);
+      border: 1px solid var(--border);
+    }
+
+    .controls {
+      padding: 18px 18px 8px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .control-group {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    label { font-weight: 600; }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    input[type="color"] {
+      padding: 0;
+      height: 44px;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent);
+    }
+
+    button {
+      background: linear-gradient(135deg, #f5c400, #f8d64e);
+      color: #0f172a;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(245, 196, 0, 0.35); }
+
+    .nationality-list {
+      display: grid;
+      gap: 10px;
+      max-height: 320px;
+      overflow: auto;
+      padding-bottom: 8px;
+    }
+
+    .nationality-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .nationality-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(245, 196, 0, 0.18);
+      border-radius: 999px;
+      color: #f9e3a6;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      display: grid;
+      gap: 4px;
+      font-size: 14px;
+    }
+
+    .stat strong { color: #fff; }
+
+    .muted { opacity: 0.8; font-size: 13px; }
+
+    .footer-note {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      margin-top: 18px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hero-content">
+      <h1>الحرم المكي بأبهى صوره</h1>
+      <p class="lead">استكشف محاكاة حية للطواف بإطلالة شبه ثلاثية الأبعاد تحاكي الجولة الافتراضية، مع إمكانية ضبط عدد الزوار حسب الجنسية وسرعة حركتهم وجودة تمثيلهم البصري.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card canvas-wrap">
+      <canvas id="tawafCanvas" aria-label="محاكاة الطواف حول الكعبة"></canvas>
+    </section>
+
+    <aside class="card side-panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="name">إضافة جنسية جديدة</label>
+          <input id="name" type="text" placeholder="مثال: المغرب" />
+          <div class="meta-grid">
+            <div class="stat">
+              <span class="muted">عدد الأفراد</span>
+              <input id="count" type="number" min="1" max="300" value="25">
+            </div>
+            <div class="stat">
+              <span class="muted">السرعة (دورات/ثانية)</span>
+              <input id="speed" type="number" step="0.1" min="0.1" max="2.5" value="0.8">
+            </div>
+          </div>
+          <div class="meta-grid">
+            <div class="stat">
+              <span class="muted">لون المجموعات</span>
+              <input id="color" type="color" value="#f5c400">
+            </div>
+            <div class="stat">
+              <span class="muted">جودة/حجم المجسم</span>
+              <input id="size" type="range" min="4" max="14" step="1" value="8">
+            </div>
+          </div>
+          <button id="addNationality">إضافة الجنسيـة</button>
+        </div>
+
+        <div class="control-group">
+          <div class="nationality-header">
+            <h3 style="margin:0; font-size:18px;">الجنسيات المشاركة</h3>
+            <span class="badge" id="totalCount">الإجمالي: 0</span>
+          </div>
+          <div class="nationality-list" id="nationalityList"></div>
+        </div>
+      </div>
+      <p class="footer-note">حرّك المؤشرات بالأعلى لزيادة العدد أو تغيير السرعة وحجم المجسم لكل جنسية.</p>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('tawafCanvas');
+    const ctx = canvas.getContext('2d');
+    const nationalitiesList = document.getElementById('nationalityList');
+    const totalCountEl = document.getElementById('totalCount');
+
+    const state = {
+      nationalities: [
+        { id: crypto.randomUUID(), name: 'السعودية', count: 42, speed: 0.52, color: '#f5c400', size: 9 },
+        { id: crypto.randomUUID(), name: 'تركيا', count: 34, speed: 0.64, color: '#c0d9ff', size: 8 },
+        { id: crypto.randomUUID(), name: 'إندونيسيا', count: 36, speed: 0.82, color: '#fefefe', size: 8 },
+      ],
+      people: []
+    };
+
+    const radiusRange = [130, 210];
+    const scene = {
+      fov: 440,
+      groundLean: 0.5,
+      baseZ: 260,
+      eyeHeight: 68
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+
+    function projectPoint(x, z, height, dims) {
+      const scale = scene.fov / (scene.fov + z);
+      return {
+        x: dims.centerX + x * scale,
+        y: dims.groundY - z * scene.groundLean * scale - height + scene.eyeHeight * (1 - scale)
+      };
+    }
+
+    function drawGround(dims) {
+      const { width, height, centerX, horizon, groundY } = dims;
+
+      const sky = ctx.createLinearGradient(0, 0, 0, horizon + 40);
+      sky.addColorStop(0, 'rgba(15, 32, 62, 0.95)');
+      sky.addColorStop(1, 'rgba(18, 36, 70, 0.72)');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, width, horizon + 80);
+
+      const glow = ctx.createRadialGradient(centerX, horizon + 10, 30, centerX, horizon + 20, width * 0.8);
+      glow.addColorStop(0, 'rgba(255, 231, 180, 0.38)');
+      glow.addColorStop(1, 'rgba(10, 18, 32, 0.3)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, width, horizon + 80);
+
+      drawColonnade(dims);
+
+      const ground = ctx.createLinearGradient(0, horizon + 30, 0, height);
+      ground.addColorStop(0, 'rgba(245, 246, 248, 0.95)');
+      ground.addColorStop(0.55, 'rgba(234, 238, 244, 0.9)');
+      ground.addColorStop(1, 'rgba(210, 218, 230, 0.85)');
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, horizon, width, height - horizon);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.14)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      ctx.lineTo(centerX, horizon + 6);
+      ctx.lineTo(width, height);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 215, 130, 0.18)';
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([26, 10]);
+      ctx.beginPath();
+      ctx.moveTo(centerX - 160, height);
+      ctx.lineTo(centerX + 120, horizon + 22);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX + 180, height);
+      ctx.lineTo(centerX - 100, horizon + 22);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      for (let r = 120; r <= 240; r += 20) {
+        const zOffset = scene.baseZ;
+        const points = [];
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 36) {
+          points.push(projectPoint(Math.cos(a) * r, zOffset + Math.sin(a) * r * 0.55, 0, dims));
+        }
+        ctx.beginPath();
+        points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    function drawColonnade(dims) {
+      const { width, centerX, horizon } = dims;
+      const baseY = horizon + 26;
+      const span = 18;
+      const arcHeight = 26;
+      const colWidth = width / 14;
+
+      for (let i = -1; i <= 14; i++) {
+        const x = i * colWidth;
+        const shade = ctx.createLinearGradient(x, baseY - 10, x + colWidth, baseY + arcHeight);
+        shade.addColorStop(0, 'rgba(235, 213, 154, 0.9)');
+        shade.addColorStop(1, 'rgba(205, 175, 120, 0.7)');
+        ctx.fillStyle = shade;
+        ctx.beginPath();
+        ctx.moveTo(x, baseY);
+        ctx.lineTo(x + colWidth, baseY);
+        ctx.lineTo(x + colWidth - 4, baseY - arcHeight);
+        ctx.lineTo(x + 4, baseY - arcHeight);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 232, 180, 0.75)';
+        ctx.beginPath();
+        ctx.ellipse(x + colWidth / 2, baseY - arcHeight, span, arcHeight, 0, 0, Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 240, 210, 0.2)';
+        ctx.fillRect(x + colWidth / 2 - 3, baseY - arcHeight, 6, arcHeight + 18);
+      }
+
+      const lampGradient = ctx.createLinearGradient(centerX - 200, baseY - 34, centerX + 200, baseY + 10);
+      lampGradient.addColorStop(0, 'rgba(255, 210, 140, 0.35)');
+      lampGradient.addColorStop(0.5, 'rgba(255, 240, 210, 0.55)');
+      lampGradient.addColorStop(1, 'rgba(255, 210, 140, 0.35)');
+      ctx.fillStyle = lampGradient;
+      ctx.fillRect(centerX - 320, baseY - 40, 640, 40);
+    }
+
+    function drawRing(dims) {
+      const { centerX } = dims;
+      const ringOuter = 240;
+      const ringInner = 120;
+      const zOffset = scene.baseZ;
+
+      const pointsOuter = [];
+      const pointsInner = [];
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 60) {
+        const x = Math.cos(angle) * ringOuter;
+        const z = zOffset + Math.sin(angle) * ringOuter * 0.55;
+        pointsOuter.push(projectPoint(x, z, 0, dims));
+
+        const xi = Math.cos(angle) * ringInner;
+        const zi = zOffset + Math.sin(angle) * ringInner * 0.55;
+        pointsInner.push(projectPoint(xi, zi, 0, dims));
+      }
+
+      const marble = ctx.createRadialGradient(centerX, dims.groundY - 30, 80, centerX, dims.groundY + 30, 520);
+      marble.addColorStop(0, 'rgba(255, 255, 255, 0.38)');
+      marble.addColorStop(1, 'rgba(200, 210, 220, 0.12)');
+      ctx.fillStyle = marble;
+
+      ctx.beginPath();
+      pointsOuter.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      for (let i = pointsInner.length - 1; i >= 0; i--) {
+        const p = pointsInner[i];
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      pointsOuter.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(245, 196, 0, 0.42)';
+      ctx.lineWidth = 3.2;
+      ctx.setLineDash([12, 10]);
+      ctx.beginPath();
+      pointsInner.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1.2;
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+        const x = Math.cos(angle) * ringOuter;
+        const z = zOffset + Math.sin(angle) * ringOuter * 0.55;
+        const start = projectPoint(x, z, 0, dims);
+        const end = projectPoint(x * 0.48, zOffset + Math.sin(angle) * ringInner * 0.6, 0, dims);
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+    }
+
+    function drawKaaba(dims) {
+      const w = 120;
+      const d = 120;
+      const h = 110;
+      const cx = 0;
+      const cz = scene.baseZ;
+
+      const corners = {
+        frontLeft: projectPoint(cx - w / 2, cz - d / 2, 0, dims),
+        frontRight: projectPoint(cx + w / 2, cz - d / 2, 0, dims),
+        backLeft: projectPoint(cx - w / 2, cz + d / 2, 0, dims),
+        backRight: projectPoint(cx + w / 2, cz + d / 2, 0, dims),
+        frontLeftTop: projectPoint(cx - w / 2, cz - d / 2, h, dims),
+        frontRightTop: projectPoint(cx + w / 2, cz - d / 2, h, dims),
+        backLeftTop: projectPoint(cx - w / 2, cz + d / 2, h, dims),
+        backRightTop: projectPoint(cx + w / 2, cz + d / 2, h, dims),
+      };
+
+      const sideShade = ctx.createLinearGradient(corners.backLeft.x, corners.backLeft.y, corners.backRight.x, corners.backRight.y);
+      sideShade.addColorStop(0, '#08080c');
+      sideShade.addColorStop(1, '#0d0d15');
+      ctx.fillStyle = sideShade;
+      ctx.beginPath();
+      ctx.moveTo(corners.backLeft.x, corners.backLeft.y);
+      ctx.lineTo(corners.backRight.x, corners.backRight.y);
+      ctx.lineTo(corners.backRightTop.x, corners.backRightTop.y);
+      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
+      ctx.closePath();
+      ctx.fill();
+
+      const frontShade = ctx.createLinearGradient(corners.backLeft.x, corners.backLeft.y, corners.frontLeft.x, corners.frontLeft.y);
+      frontShade.addColorStop(0, '#05050a');
+      frontShade.addColorStop(1, '#0c0c12');
+      ctx.fillStyle = frontShade;
+      ctx.beginPath();
+      ctx.moveTo(corners.backLeft.x, corners.backLeft.y);
+      ctx.lineTo(corners.frontLeft.x, corners.frontLeft.y);
+      ctx.lineTo(corners.frontLeftTop.x, corners.frontLeftTop.y);
+      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.moveTo(corners.frontLeft.x, corners.frontLeft.y + 6);
+      ctx.lineTo(corners.frontRight.x, corners.frontRight.y + 10);
+      ctx.lineTo(corners.backRight.x, corners.backRight.y + 10);
+      ctx.lineTo(corners.backLeft.x, corners.backLeft.y + 6);
+      ctx.closePath();
+      ctx.fill();
+
+      const belt = ctx.createLinearGradient(corners.frontLeft.x, corners.frontLeft.y, corners.frontRight.x, corners.frontRight.y);
+      belt.addColorStop(0, '#f7d560');
+      belt.addColorStop(1, '#f3c200');
+      ctx.fillStyle = belt;
+      const beltHeight = 14;
+      const beltY = (corners.frontLeft.y + corners.backLeft.y) / 2 - 16;
+      ctx.fillRect(Math.min(corners.frontLeft.x, corners.backLeft.x), beltY, Math.abs(corners.frontLeft.x - corners.backLeft.x), beltHeight);
+
+      ctx.fillStyle = '#d5b100';
+      ctx.fillRect(Math.min(corners.frontLeft.x, corners.backLeft.x), beltY + beltHeight + 1, Math.abs(corners.frontLeft.x - corners.backLeft.x), 3);
+
+      const doorWidth = 24;
+      const doorHeight = 38;
+      const doorBase = projectPoint(cx + w / 4, cz - d / 2, 0, dims);
+      const doorTop = projectPoint(cx + w / 4, cz - d / 2, doorHeight, dims);
+      const doorGrad = ctx.createLinearGradient(doorBase.x, doorBase.y, doorTop.x, doorTop.y);
+      doorGrad.addColorStop(0, '#f6cb52');
+      doorGrad.addColorStop(1, '#e0ad00');
+      ctx.fillStyle = doorGrad;
+      ctx.beginPath();
+      ctx.moveTo(doorBase.x - doorWidth / 2, doorBase.y);
+      ctx.lineTo(doorBase.x + doorWidth / 2, doorBase.y);
+      ctx.lineTo(doorTop.x + doorWidth / 2, doorTop.y);
+      ctx.lineTo(doorTop.x - doorWidth / 2, doorTop.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      const kiswahLines = 6;
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < kiswahLines; i++) {
+        const yFront = corners.frontLeft.y - (h / kiswahLines) * i * 0.55;
+        ctx.beginPath();
+        ctx.moveTo(corners.frontLeft.x, yFront);
+        ctx.lineTo(corners.frontRight.x, yFront + 4);
+        ctx.stroke();
+      }
+
+      const roofGradient = ctx.createLinearGradient(corners.backLeftTop.x, corners.backLeftTop.y, corners.backRightTop.x, corners.backRightTop.y);
+      roofGradient.addColorStop(0, 'rgba(255,255,255,0.16)');
+      roofGradient.addColorStop(1, 'rgba(255,255,255,0.04)');
+      ctx.fillStyle = roofGradient;
+      ctx.beginPath();
+      ctx.moveTo(corners.frontLeftTop.x, corners.frontLeftTop.y);
+      ctx.lineTo(corners.frontRightTop.x, corners.frontRightTop.y);
+      ctx.lineTo(corners.backRightTop.x, corners.backRightTop.y);
+      ctx.lineTo(corners.backLeftTop.x, corners.backLeftTop.y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawPrayerRows(dims) {
+      const rows = [
+        { radius: 150, count: 12, lift: 1.1 },
+        { radius: 170, count: 14, lift: 1.15 },
+        { radius: 190, count: 15, lift: 1.2 },
+      ];
+
+      rows.forEach(row => {
+        for (let i = 0; i < row.count; i++) {
+          const angle = Math.PI / 8 + (i / row.count) * (Math.PI / 1.2);
+          const x3d = Math.cos(angle) * row.radius;
+          const z3d = scene.baseZ + Math.sin(angle) * row.radius * 0.55;
+          const scale = scene.fov / (scene.fov + z3d);
+          const size = 9 * (0.9 + scale * row.lift);
+          const pos = projectPoint(x3d, z3d, size * 1.8, dims);
+
+          const robe = ctx.createLinearGradient(pos.x - size / 2, pos.y - size * 1.6, pos.x + size / 2, pos.y + size * 1.4);
+          robe.addColorStop(0, 'rgba(255,255,255,0.95)');
+          robe.addColorStop(1, 'rgba(235,235,235,0.7)');
+          ctx.fillStyle = robe;
+          ctx.beginPath();
+          ctx.moveTo(pos.x - size * 0.5, pos.y + size * 0.2);
+          ctx.lineTo(pos.x + size * 0.5, pos.y + size * 0.2);
+          ctx.lineTo(pos.x + size * 0.65, pos.y + size * 1.6);
+          ctx.lineTo(pos.x - size * 0.65, pos.y + size * 1.6);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y - size * 0.1, size * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.ellipse(pos.x, pos.y + size * 1.75, size * 0.9, size * 0.28, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    function rebuildPeople() {
+      state.people = [];
+      state.nationalities.forEach(nat => {
+        for (let i = 0; i < nat.count; i++) {
+          state.people.push({
+            nationalityId: nat.id,
+            angle: Math.random() * Math.PI * 2,
+            radius: randomBetween(...radiusRange),
+          });
+        }
+      });
+      updateTotalCount();
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function draw() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const dims = {
+        width,
+        height,
+        centerX: width / 2,
+        horizon: height * 0.32,
+        groundY: height * 0.88,
+      };
+
+      drawGround(dims);
+      drawRing(dims);
+      drawKaaba(dims);
+      drawPrayerRows(dims);
+
+      state.people.forEach(person => {
+        const nat = state.nationalities.find(n => n.id === person.nationalityId);
+        if (!nat) return;
+        person.angle += nat.speed * 0.01;
+
+        const x3d = Math.cos(person.angle) * person.radius;
+        const z3d = scene.baseZ + Math.sin(person.angle) * person.radius * 0.55;
+        const scale = scene.fov / (scene.fov + z3d);
+        const size = nat.size * (0.9 + scale * 1.4);
+        const pos = projectPoint(x3d, z3d, size * 1.6, dims);
+
+        const shadow = projectPoint(x3d, z3d, size * 0.2, dims);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath();
+        ctx.ellipse(shadow.x, shadow.y + size * 0.4, size * 0.9, size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const bodyHeight = size * 1.6;
+        const bodyWidth = size * 0.9;
+        const bodyY = pos.y - bodyHeight * 0.6;
+        const bodyGradient = ctx.createLinearGradient(pos.x - bodyWidth / 2, bodyY, pos.x + bodyWidth / 2, bodyY + bodyHeight);
+        bodyGradient.addColorStop(0, nat.color + 'e0');
+        bodyGradient.addColorStop(1, nat.color + '75');
+        ctx.fillStyle = bodyGradient;
+        ctx.beginPath();
+        ctx.moveTo(pos.x - bodyWidth / 2, bodyY + bodyHeight * 0.2);
+        ctx.quadraticCurveTo(pos.x - bodyWidth * 0.6, bodyY + bodyHeight * 0.5, pos.x - bodyWidth / 2, bodyY + bodyHeight);
+        ctx.lineTo(pos.x + bodyWidth / 2, bodyY + bodyHeight);
+        ctx.quadraticCurveTo(pos.x + bodyWidth * 0.6, bodyY + bodyHeight * 0.5, pos.x + bodyWidth / 2, bodyY + bodyHeight * 0.2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pos.x, bodyY + bodyHeight * 0.15);
+        ctx.lineTo(pos.x, bodyY + bodyHeight);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0e1424';
+        ctx.beginPath();
+        ctx.arc(pos.x, bodyY - size * 0.15, size * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    function updateTotalCount() {
+      const total = state.nationalities.reduce((sum, nat) => sum + Number(nat.count || 0), 0);
+      totalCountEl.textContent = `الإجمالي: ${total}`;
+    }
+
+    function renderNationalities() {
+      nationalitiesList.innerHTML = '';
+      state.nationalities.forEach(nat => {
+        const container = document.createElement('div');
+        container.className = 'nationality-item';
+        container.innerHTML = `
+          <div class="nationality-header">
+            <span class="badge" style="background: ${nat.color}33; color: #fff;">
+              <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${nat.color}"></span>
+              ${nat.name}
+            </span>
+            <button data-id="${nat.id}" class="remove">حذف</button>
+          </div>
+          <div class="meta-grid">
+            <label>العدد <input data-field="count" data-id="${nat.id}" type="number" min="1" max="500" value="${nat.count}"></label>
+            <label>السرعة <input data-field="speed" data-id="${nat.id}" type="number" step="0.05" min="0.1" max="2.5" value="${nat.speed}"></label>
+            <label>الحجم/الجودة <input data-field="size" data-id="${nat.id}" type="range" min="4" max="14" step="1" value="${nat.size}"></label>
+          </div>
+        `;
+        nationalitiesList.appendChild(container);
+      });
+    }
+
+    function addNationality() {
+      const name = document.getElementById('name').value.trim();
+      const count = Math.min(Math.max(1, Number(document.getElementById('count').value) || 1), 500);
+      const speed = Math.min(Math.max(0.1, Number(document.getElementById('speed').value) || 0.1), 2.5);
+      const color = document.getElementById('color').value;
+      const size = Math.min(Math.max(4, Number(document.getElementById('size').value) || 8), 14);
+
+      if (!name) return alert('أدخل اسم الجنسيـة أولاً');
+
+      state.nationalities.push({ id: crypto.randomUUID(), name, count, speed, color, size });
+      document.getElementById('name').value = '';
+      rebuildPeople();
+      renderNationalities();
+    }
+
+    function handleListInput(e) {
+      const field = e.target.dataset.field;
+      const id = e.target.dataset.id;
+      if (!field || !id) return;
+      const nat = state.nationalities.find(n => n.id === id);
+      if (!nat) return;
+      const value = Number(e.target.value);
+      if (field === 'count') nat.count = Math.min(Math.max(1, value || nat.count), 500);
+      if (field === 'speed') nat.speed = Math.min(Math.max(0.1, value || nat.speed), 2.5);
+      if (field === 'size') nat.size = Math.min(Math.max(4, value || nat.size), 14);
+      rebuildPeople();
+    }
+
+    function handleRemove(e) {
+      if (!e.target.classList.contains('remove')) return;
+      const id = e.target.dataset.id;
+      state.nationalities = state.nationalities.filter(n => n.id !== id);
+      rebuildPeople();
+      renderNationalities();
+    }
+
+    document.getElementById('addNationality').addEventListener('click', addNationality);
+    nationalitiesList.addEventListener('input', handleListInput);
+    nationalitiesList.addEventListener('click', handleRemove);
+
+    resizeCanvas();
+    rebuildPeople();
+    renderNationalities();
+    draw();
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      rebuildPeople();
+    });
+  </script>
+</body>
+</html>
