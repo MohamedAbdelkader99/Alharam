@@ -282,9 +282,9 @@
 
     const state = {
       nationalities: [
-        { id: crypto.randomUUID(), name: 'السعودية', count: 38, speed: 0.55, color: '#f5c400', size: 10 },
-        { id: crypto.randomUUID(), name: 'تركيا', count: 32, speed: 0.65, color: '#00c2ff', size: 9 },
-        { id: crypto.randomUUID(), name: 'إندونيسيا', count: 34, speed: 0.85, color: '#8dff75', size: 9 },
+        { id: crypto.randomUUID(), name: 'السعودية', count: 46, speed: 0.55, color: '#f5c400', size: 10 },
+        { id: crypto.randomUUID(), name: 'تركيا', count: 38, speed: 0.65, color: '#00c2ff', size: 9.5 },
+        { id: crypto.randomUUID(), name: 'إندونيسيا', count: 40, speed: 0.85, color: '#8dff75', size: 9.5 },
       ],
       people: []
     };
@@ -296,6 +296,11 @@
       baseZ: 260,
       eyeHeight: 68
     };
+
+    const bgImage = new Image();
+    let bgReady = false;
+    bgImage.src = 'https://images.unsplash.com/photo-1509828928593-80bbd2f2b769?auto=format&fit=crop&w=1600&q=80';
+    bgImage.onload = () => { bgReady = true; };
 
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
@@ -315,6 +320,18 @@
 
     function drawGround(dims) {
       const { width, height, centerX, horizon, groundY } = dims;
+
+      if (bgReady) {
+        const scale = Math.max(width / bgImage.width, (horizon + 240) / bgImage.height);
+        const dw = bgImage.width * scale;
+        const dh = bgImage.height * scale;
+        const dx = centerX - dw / 2;
+        const dy = horizon - dh * 0.48;
+        ctx.save();
+        ctx.globalAlpha = 0.65;
+        ctx.drawImage(bgImage, dx, dy, dw, dh);
+        ctx.restore();
+      }
 
       const sky = ctx.createLinearGradient(0, 0, 0, horizon + 40);
       sky.addColorStop(0, 'rgba(14, 34, 82, 0.92)');
@@ -635,6 +652,32 @@
       });
     }
 
+    function drawForegroundCrowd(dims) {
+      const foregroundRows = [
+        { z: scene.baseZ - 110, count: 8, spread: 360, color: '#f5c400', baseSize: 13 },
+        { z: scene.baseZ - 90, count: 10, spread: 320, color: '#00c2ff', baseSize: 12 },
+        { z: scene.baseZ - 70, count: 12, spread: 300, color: '#ff9eb5', baseSize: 11 }
+      ];
+
+      foregroundRows.forEach((row, idx) => {
+        for (let i = 0; i < row.count; i++) {
+          const x = ((i / (row.count - 1)) - 0.5) * row.spread + (Math.random() * 12 - 6);
+          const z = row.z + Math.sin(i * 0.6 + idx) * 6;
+          const size = row.baseSize + Math.random() * 2;
+          drawMiniPilgrim(x, z, size, dims, row.color);
+        }
+      });
+
+      const nearest = [
+        { x: -240, z: scene.baseZ - 140, size: 15, color: '#f5c400' },
+        { x: -120, z: scene.baseZ - 136, size: 14, color: '#00c2ff' },
+        { x: 0, z: scene.baseZ - 132, size: 15, color: '#8dff75' },
+        { x: 120, z: scene.baseZ - 136, size: 14, color: '#ff9eb5' },
+        { x: 240, z: scene.baseZ - 142, size: 15, color: '#f5c400' }
+      ];
+      nearest.forEach(p => drawMiniPilgrim(p.x, p.z, p.size, dims, p.color));
+    }
+
     function draw() {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
@@ -704,6 +747,8 @@
         ctx.lineWidth = 1;
         ctx.stroke();
       });
+
+      drawForegroundCrowd(dims);
 
       requestAnimationFrame(draw);
     }
