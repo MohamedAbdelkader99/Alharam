@@ -695,6 +695,10 @@
       drawRing(dims);
       drawCongregationRows(dims);
       drawKaaba(dims);
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      drawBaseScene(width, height, centerX, centerY);
 
       state.people.forEach(person => {
         const nat = state.nationalities.find(n => n.id === person.nationalityId);
@@ -749,6 +753,26 @@
       });
 
       drawForegroundCrowd(dims);
+
+        const x = centerX + Math.cos(person.angle) * person.radius;
+        const y = centerY + Math.sin(person.angle) * person.radius * 0.65;
+        const depthScale = 0.65 + 0.35 * (person.radius / radiusRange[1]);
+        const size = nat.size * depthScale;
+
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, nat.color + 'bb');
+        gradient.addColorStop(1, nat.color + '00');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0b1320';
+        ctx.beginPath();
+        ctx.arc(x, y - size * 0.3, size * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       requestAnimationFrame(draw);
     }
